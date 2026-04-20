@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS – College Event Management Platform</title>
+
+<!-- External Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- Font Awesome 6 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<!-- NEXUS Styles -->
+<link rel="stylesheet" href="style.css?v=2026010101">
+</head>
+<body>
+
+<div id="toasts"></div>
+
+<!-- Firebase Sync Loader -->
+<div id="fb-sync-loader" style="display:none;position:fixed;inset:0;background:rgba(5,5,10,.97);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="font-family:'Outfit',sans-serif;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#e84c3d,#3d7de8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">NEXUS</div>
+  <div style="width:48px;height:48px;border:3px solid rgba(232,76,61,.2);border-top-color:#e84c3d;border-radius:50%;animation:spin .8s linear infinite"></div>
+  <div style="color:rgba(255,255,255,.45);font-size:.82rem">Loading from cloud...</div>
+</div>
+
+</head>
+<body>
+
+<div id="toasts"></div>
+
+<!-- ══════════════════════════════════════
+     AUTH SCREEN — ONLY LOGIN (NO REGISTER)
+══════════════════════════════════════ -->
+<div class="screen on" id="s-auth" style="align-items:center;justify-content:center;background:radial-gradient(ellipse 90% 70% at 50% 0%,rgba(61,125,232,.18),transparent 55%),radial-gradient(ellipse 60% 40% at 90% 90%,rgba(232,76,61,.1),transparent 50%)">
+  <div style="width:100%;max-width:420px;padding:20px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-family:'Outfit',sans-serif;font-size:3rem;font-weight:800;letter-spacing:.06em;background:linear-gradient(135deg,var(--accent),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent">NEXUS</div>
+      <div style="color:var(--text2);font-size:.83rem;margin-top:4px">College Event Management Platform</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:30px">
+      <div style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:6px">Welcome Back 👋</div>
+      <div style="font-size:.82rem;color:var(--text2);margin-bottom:22px">Login with your College ID and Password</div>
+      <div class="fg">
+        <label class="fl">College ID</label>
+        <input class="fi" id="li-id" type="text" placeholder="Enter your College ID" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label class="fl">Password</label>
+        <input class="fi" id="li-pw" type="password" placeholder="Enter your Password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="ferr" id="li-err" style="margin-bottom:14px">❌ Invalid College ID or Password. Please try again.</div>
+      <button class="btn btn-red btn-full btn-lg" onclick="doLogin()">Login to NEXUS →</button>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:.78rem;color:var(--text2)">
+      Contact admin to get your College ID & Password
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN WEBSITE
+══════════════════════════════════════ -->
+<div class="screen" id="s-main">
+  <!-- NAV -->
+  <nav id="nav">
+    <div class="nav-logo" onclick="page('home')">NEXUS</div>
+    <div class="nav-links">
+      <button class="nl on" id="nl-home" onclick="page('home')"><i class="fa-solid fa-house"></i> Home</button>
+      <button class="nl" id="nl-events" onclick="page('events')"><i class="fa-solid fa-calendar-days"></i> Events</button>
+      <button class="nl" id="nl-external" onclick="page('external')"><i class="fa-solid fa-earth-asia"></i> External Events</button>
+      <button class="nl" id="nl-tickets" onclick="page('tickets')"><i class="fa-solid fa-ticket"></i> Tickets & Passes</button>
+      <button class="nl" id="nl-dashboard" onclick="page('dashboard')"><i class="fa-solid fa-gauge-high"></i> My Dashboard</button>
+      <button class="nl" id="nl-admin" onclick="page('admin')"><i class="fa-solid fa-shield-halved"></i> Admin</button>
+      <button class="nl" id="nl-flowchart" onclick="page('flowchart')"><i class="fa-solid fa-diagram-project"></i> Flowchart</button>
+    </div>
+    <div class="nav-right">
+      <button class="nb-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="font-size:.9rem"><i class="fa-solid fa-moon"></i></button>
+      <div class="nb-btn" onclick="page('notifications')"><i class="fa-solid fa-bell"></i><div class="nb-dot" id="ndot" style="display:none"></div></div>
+      <div class="nav-av" id="nav-av" onclick="page('dashboard')">U</div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <!-- PAGES -->
+  <div id="pc" style="flex:1">
+
+    <!-- ── HOME ── -->
+    <div id="p-home" style="display:none">
+      <div class="hero-section">
+        <div class="hero-bg"></div>
+        <div class="hero-particles" id="particles"></div>
+        <div class="hero-pill"><i class="fa-solid fa-bolt"></i> Official Platform · 2026</div>
+        <h1>CAMPUS EVENTS<br><em>ELEVATED</em></h1>
+        <p class="hero-sub">The complete college event management platform. Discover every event, book passes instantly, and never miss a moment on campus.</p>
+        <div class="hero-ctas">
+          <button class="btn btn-red btn-xl" onclick="page('events')">🎯 Explore Events</button>
+          <button class="btn btn-ghost btn-xl" onclick="page('external')">🌐 External Events</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hstat"><div class="hstat-n" id="hs-ev" style="color:var(--accent)">—</div><div class="hstat-l">Events</div></div>
+          <div class="hstat"><div class="hstat-n" id="hs-st" style="color:var(--blue)">—</div><div class="hstat-l">Students</div></div>
+          <div class="hstat"><div class="hstat-n" id="hs-tk" style="color:var(--teal)">—</div><div class="hstat-l">Passes Issued</div></div>
+          <div class="hstat"><div class="hstat-n" style="color:var(--gold)">8+</div><div class="hstat-l">Categories</div></div>
+        </div>
+      </div>
+      <div class="sec alt">
+        <div class="con reveal">
+          <div class="sec-tag">Browse By</div>
+          <div class="sec-h">EVENT CATEGORIES</div>
+          <div class="cgrid" id="home-cats"></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="con reveal">
+          <div class="sec-row"><div><div class="sec-tag">Featured</div><div class="sec-h">UPCOMING EVENTS</div></div><button class="btn btn-ghost btn-sm" onclick="page('events')">View All →</button></div>
+          <div class="egrid" id="home-ev"></div>
+        </div>
+      </div>
+      
+      <div class="sec alt">
+        <div class="con reveal">
+          <div class="sec-row"><div><div class="sec-tag">Top Students</div><div class="sec-h">LEADERBOARD</div></div></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px">
+            <div class="dcard"><div class="dct">🏆 Most Active Participants</div><div id="lb-list"></div></div>
+            <div class="dcard"><div class="dct">📊 Event Popularity</div><div class="bar-l" id="pop-bars"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec dark">
+        <div class="con reveal">
+          <div style="text-align:center;margin-bottom:32px">
+            <div class="sec-tag">System Overview</div>
+            <div class="sec-h">HOW NEXUS WORKS</div>
+            <div class="sec-sub" style="margin:0 auto;text-align:center">From login to QR entry — every step of your campus event journey.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-bottom:26px">
+            <div class="how-card red"><div style="font-size:1rem;font-weight:800;margin-bottom:12px;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:8px"><span>🚀</span> Entry & Auth</div>
+              <div class="how-step"><div class="how-num">1</div><span>Open website → Login Page</span></div>
+              <div class="how-step"><div class="how-num">2</div><span>Enter College ID & Password</span></div>
+              <div class="how-step"><div class="how-num">3</div><span>Admin assigns your credentials</span></div>
+              <div class="how-step"><div class="how-num">4</div><span>Login → Full platform access</span></div>
+            </div>
+            <div class="how-card blue"><div style="font-size:1rem;font-weight:800;margin-bottom:12px;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:8px"><span>📅</span> Browse Events</div>
+              <div class="how-step"><div class="how-num">1</div><span>Browse: Cultural, Tech, Sports, Workshops</span></div>
+              <div class="how-step"><div class="how-num">2</div><span>Filter by date, price, category, status</span></div>
+              <div class="how-step"><div class="how-num">3</div><span>View full details: venue, video, seats</span></div>
+              <div class="how-step"><div class="how-num">4</div><span>Register free or purchase a paid pass</span></div>
+            </div>
+            <div class="how-card gold"><div style="font-size:1rem;font-weight:800;margin-bottom:12px;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:8px"><span>🎫</span> Ticket & Payment</div>
+              <div class="how-step"><div class="how-num">1</div><span>Choose: Free / Regular / VIP pass</span></div>
+              <div class="how-step"><div class="how-num">2</div><span>Pay via UPI, Card or Wallet</span></div>
+              <div class="how-step"><div class="how-num">3</div><span>QR ticket generated + email sent</span></div>
+              <div class="how-step"><div class="how-num">4</div><span>Download PDF pass to your device</span></div>
+            </div>
+            <div class="how-card teal"><div style="font-size:1rem;font-weight:800;margin-bottom:12px;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:8px"><span>📷</span> QR Verification</div>
+              <div class="how-step"><div class="how-num">1</div><span>Show QR pass at event entry gate</span></div>
+              <div class="how-step"><div class="how-num">2</div><span>Staff scans using admin QR scanner</span></div>
+              <div class="how-step"><div class="how-num">3</div><span>System validates in real-time</span></div>
+              <div class="how-step"><div class="how-num">4</div><span>Valid → Entry · Invalid → Denied</span></div>
+            </div>
+            <div class="how-card purple"><div style="font-size:1rem;font-weight:800;margin-bottom:12px;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:8px"><span>⚙️</span> Admin Control</div>
+              <div class="how-step"><div class="how-num">1</div><span>Manage student accounts</span></div>
+              <div class="how-step"><div class="how-num">2</div><span>Create, edit, publish events</span></div>
+              <div class="how-step"><div class="how-num">3</div><span>Track revenue, manage refunds</span></div>
+              <div class="how-step"><div class="how-num">4</div><span>Analytics reports + announcements</span></div>
+            </div>
+            <div class="how-card green"><div style="font-size:1rem;font-weight:800;margin-bottom:12px;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:8px"><span>🏆</span> Post-Event</div>
+              <div class="how-step"><div class="how-num">1</div><span>Submit rating & event review</span></div>
+              <div class="how-step"><div class="how-num">2</div><span>Download participation certificate</span></div>
+              <div class="how-step"><div class="how-num">3</div><span>Earn achievement badges</span></div>
+              <div class="how-step"><div class="how-num">4</div><span>Request refund if cancelled (policy)</span></div>
+            </div>
+          </div>
+          <div style="text-align:center"><button class="btn btn-red btn-lg" onclick="page('flowchart')">🗺️ View Full Interactive Flowcharts →</button></div>
+        </div>
+      </div>
+      <footer class="footer">
+        <div class="fg-row">
+          <div>
+            <div class="fl-logo">NEXUS</div>
+            <div class="fl-desc">The complete college event management platform. Login, book passes, and experience every campus moment.</div>
+            <div class="socrow" style="margin-top:16px"><a class="socb">𝕏</a><a class="socb">in</a><a class="socb">📸</a><a class="socb">▶</a></div>
+          </div>
+          <div class="fcol"><h4>Platform</h4><ul><li><a onclick="page('events')">Events</a></li><li><a onclick="page('external')">External</a></li><li><a onclick="page('tickets')">Tickets</a></li><li><a onclick="page('dashboard')">Dashboard</a></li><li><a onclick="page('admin')">Admin</a></li></ul></div>
+          <div class="fcol"><h4>Features</h4><ul><li><a onclick="toast('QR Pass system is active!','info')">QR Passes</a></li><li><a onclick="toast('Certificates in dashboard!','info')">Certificates</a></li><li><a onclick="page('notifications')">Notifications</a></li></ul></div>
+          <div class="fcol"><h4>Support</h4><ul><li><a onclick="openFeedback()">Feedback</a></li><li><a onclick="toast('Help Center opening soon','info')">Help Center</a></li><li><a onclick="toast('Privacy Policy','info')">Privacy Policy</a></li><li><a onclick="toast('Terms of Use','info')">Terms of Use</a></li></ul></div>
+        </div>
+        <div class="fb"><span>© 2026 NEXUS Event Platform. All rights reserved.</span><span>Made with <i class="fa-solid fa-heart" style="color:var(--accent)"></i> for Students</span></div>
+      </footer>
+    </div>
+
+    <!-- ── EVENTS ── -->
+    <div id="p-events" style="display:none">
+      <!-- MAJOR EVENTS SLIDER -->
+      
+      <div class="sec">
+        <div class="con">
+          <div class="sec-tag">Discover</div><div class="sec-h" style="margin-bottom:22px">ALL EVENTS</div>
+          <div class="search-box" style="max-width:100%">
+            <span style="padding:0 4px 0 12px;color:var(--text2);font-size:1.1rem">🔍</span>
+            <input class="search-in" id="ev-search" placeholder="Search events, fests, workshops, sports..." oninput="filterEv()">
+            <select class="fi" id="ev-cat" onchange="filterEv()" style="width:170px;border:none;background:var(--surface2)"><option value="">All Categories</option></select>
+            <select class="fi" id="ev-sort" onchange="filterEv()" style="width:130px;border:none;background:var(--surface2)"><option value="">Sort by</option><option value="date">Date</option><option value="price">Price</option><option value="popular">Popular</option></select>
+          </div>
+          <div class="filter-chips" id="ev-chips">
+            <div class="chip on" onclick="setFilter(this,'all')">All Events</div>
+            <div class="chip" onclick="setFilter(this,'upcoming')">Upcoming</div>
+            <div class="chip" onclick="setFilter(this,'live')">🔴 Live Now</div>
+            <div class="chip" onclick="setFilter(this,'free')">Free Entry</div>
+            <div class="chip" onclick="setFilter(this,'completed')">Past Events</div>
+          </div>
+          <div class="egrid" id="all-ev-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EXTERNAL ── -->
+    <div id="p-external" style="display:none">
+      <div class="sec">
+        <div class="con">
+          <div class="sec-tag">Beyond Campus</div><div class="sec-h">EXTERNAL & INTER-COLLEGE EVENTS</div>
+          <div class="sec-sub">Discover events happening outside your college and participate through the same platform.</div>
+          <div style="display:flex;flex-direction:column;gap:14px" id="ext-ev-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TICKETS ── -->
+    <div id="p-tickets" style="display:none">
+      <div class="sec">
+        <div class="con">
+          <div class="sec-tag">Passes & Pricing</div><div class="sec-h">CHOOSE YOUR PASS</div>
+          <div class="sec-sub">Select the right pass for you. All passes include a unique digital QR code after confirmed payment.</div>
+          <div class="tgrid" id="t-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD ── -->
+    <div id="p-dashboard" style="display:none">
+      <div class="sec">
+        <div class="con">
+          <div class="dash-layout">
+            <div class="dsidebar">
+              <div class="dav" id="d-av">U</div>
+              <div class="dname" id="d-name">Student</div>
+              <div class="did" id="d-id">ID: —</div>
+              <div class="dbadges" id="d-badges"></div>
+              <div class="dstats"><div><div class="ds-n" id="d-ec">0</div><div class="ds-l">Events</div></div><div><div class="ds-n" id="d-cc">0</div><div class="ds-l">Certs</div></div><div><div class="ds-n" id="d-sp">₹0</div><div class="ds-l">Spent</div></div></div>
+              <div class="dmenu">
+                <button class="dmi on" onclick="dtab(this,'tickets')">🎫 My Passes</button>
+                <button class="dmi" onclick="dtab(this,'achievements')">🏆 Achievements</button>
+                <button class="dmi" onclick="dtab(this,'certificates')">📜 Certificates</button>
+                <button class="dmi" onclick="dtab(this,'payment-hist')">💰 Payment History</button>
+                <button class="dmi" onclick="dtab(this,'feedback-hist')">⭐ My Reviews</button>
+                <button class="dmi" onclick="dtab(this,'refunds')">↩️ Refunds</button>
+              </div>
+            </div>
+            <div class="dmain" id="d-main"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN ── -->
+    <div id="p-admin" style="display:none">
+      <div class="admin-wrap">
+        <div class="aside">
+          <div class="aside-logo"><i class="fa-solid fa-gear"></i> ADMIN</div>
+          <button class="ami on" onclick="atab(this,'overview')"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+          <button class="ami" onclick="atab(this,'events')"><i class="fa-solid fa-calendar-plus"></i> Events</button>
+          <button class="ami" onclick="atab(this,'extevents')"><i class="fa-solid fa-earth-asia"></i> External Events</button>
+          <button class="ami" onclick="atab(this,'students')"><i class="fa-solid fa-users"></i> Students</button>
+          <button class="ami" onclick="atab(this,'scan')"><i class="fa-solid fa-qrcode"></i> QR Scanner</button>
+          <button class="ami" onclick="atab(this,'announcements')"><i class="fa-solid fa-bullhorn"></i> Announcements</button>
+          <button class="ami" onclick="atab(this,'revenue')"><i class="fa-solid fa-indian-rupee-sign"></i> Revenue</button>
+          <button class="ami" onclick="atab(this,'analytics')"><i class="fa-solid fa-chart-line"></i> Analytics</button>
+          <button class="ami" onclick="atab(this,'feedback')"><i class="fa-solid fa-star-half-stroke"></i> Reviews</button>
+        </div>
+        <div class="amain" id="a-main"></div>
+      </div>
+    </div>
+
+    <!-- ── NOTIFICATIONS ── -->
+    <div id="p-notifications" style="display:none">
+      <div class="sec">
+        <div class="con" style="max-width:620px">
+          <div class="sec-row" style="margin-bottom:22px">
+            <div><div class="sec-tag">Alerts</div><div class="sec-h">NOTIFICATIONS</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px" id="n-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EVENT DETAIL ── -->
+    <div id="p-detail" style="display:none">
+      <div class="ed-hero" id="edh"></div>
+      <div class="ed-body" id="edb"></div>
+    </div>
+
+    <!-- ── FLOWCHART ── -->
+    <div id="p-flowchart" style="display:none">
+      <div class="sec">
+        <div class="con" style="max-width:1000px">
+          <div style="text-align:center;margin-bottom:30px">
+            <div class="sec-tag">System Architecture</div>
+            <div class="sec-h">NEXUS — COMPLETE FLOWCHART</div>
+            <div class="sec-sub" style="margin:0 auto;text-align:center">Every flow in the platform. Click a tab to explore.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px">
+            <button class="ftab on" onclick="flowTab(this,'entry')">🚀 Entry & Auth</button>
+            <button class="ftab" onclick="flowTab(this,'events')">📅 Events</button>
+            <button class="ftab" onclick="flowTab(this,'tickets')">🎫 Ticket & Pay</button>
+            <button class="ftab" onclick="flowTab(this,'dashboard')">👤 Dashboard</button>
+            <button class="ftab" onclick="flowTab(this,'admin')">⚙️ Admin</button>
+            <button class="ftab" onclick="flowTab(this,'qr')">📷 QR Verify</button>
+            <button class="ftab" onclick="flowTab(this,'arch')">🏗️ Architecture</button>
+          </div>
+
+          <div class="fpanel on" id="fp-entry">
+            <div class="fcanvas">
+              <div class="fnode fstart">🌐 User Opens Website</div><div class="farr">↓</div>
+              <div class="fnode">🔐 Login Page<div class="fnode-sub">College ID + Password</div></div><div class="farr">↓</div>
+              <div class="fnode fdecision">🔍 Credentials Valid?</div><div class="farr">↓</div>
+              <div class="fbranch">
+                <div class="farm"><div class="fnode fsucc">✅ Valid</div><div class="farr">↓</div><div class="fnode fdecision">👤 Role?</div><div class="farr">↓</div>
+                  <div class="fbranch">
+                    <div class="farm"><div class="fnode faction">🎓 Student Dashboard</div></div>
+                    <div class="farm"><div class="fnode" style="border-color:var(--accent);color:var(--accent)">🛡️ Admin Dashboard</div></div>
+                  </div>
+                </div>
+                <div class="farm"><div class="fnode" style="border-color:var(--accent);color:var(--accent)">❌ Invalid</div><div class="farr">↓</div><div class="fnode fwarn">⚠️ Error Message Shown</div><div class="farr">↓</div><div class="fnode">🔄 Try Again</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fpanel" id="fp-events">
+            <div class="fcanvas">
+              <div class="fnode fstart">📅 Events Page</div><div class="farr">↓</div>
+              <div class="fnode faction">🔍 Search & Filter<div class="fnode-sub">Category · Date · Price · Status</div></div><div class="farr">↓</div>
+              <div class="fbranch">
+                <div class="farm"><div class="fnode" style="border-color:var(--accent)">🎭 Cultural</div></div>
+                <div class="farm"><div class="fnode" style="border-color:var(--blue)">💻 Technical</div></div>
+                <div class="farm"><div class="fnode" style="border-color:var(--green)">⚽ Sports</div></div>
+                <div class="farm"><div class="fnode" style="border-color:var(--purple)">🌐 External</div></div>
+              </div><div class="farr">↓</div>
+              <div class="fnode faction">🔎 View Event Details</div><div class="farr">↓</div>
+              <div class="fbranch">
+                <div class="farm"><div class="fnode fsucc">🆓 Free → Register Instantly</div></div>
+                <div class="farm"><div class="fnode fwarn">💳 Paid → Payment Flow</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fpanel" id="fp-tickets">
+            <div class="fcanvas">
+              <div class="fnode fstart">🎫 Initiate Ticket Purchase</div><div class="farr">↓</div>
+              <div class="fbranch">
+                <div class="farm"><div class="fnode">🆓 Free Pass</div></div>
+                <div class="farm"><div class="fnode faction">🎟️ Regular Pass</div></div>
+                <div class="farm"><div class="fnode fwarn">⭐ VIP Pass</div></div>
+              </div><div class="farr">↓</div>
+              <div class="fnode fdecision">💳 Payment Gateway<div class="fnode-sub">UPI / Card / Wallet</div></div><div class="farr">↓</div>
+              <div class="fbranch">
+                <div class="farm"><div class="fnode fsucc">✅ Payment Success</div><div class="farr">↓</div><div class="fnode faction">🔲 QR Ticket Generated</div><div class="farr">↓</div><div class="fnode fend">📥 Download PDF Ticket</div></div>
+                <div class="farm"><div class="fnode" style="border-color:var(--accent);color:var(--accent)">❌ Payment Failed</div><div class="farr">↓</div><div class="fnode fwarn">🔄 Retry</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fpanel" id="fp-dashboard">
+            <div class="fcanvas">
+              <div class="fnode fstart">👤 Student Dashboard</div><div class="farr">↓</div>
+              <div class="fbranch" style="flex-wrap:wrap">
+                <div class="farm"><div class="fnode faction">🎫 My Passes</div></div>
+                <div class="farm"><div class="fnode faction">🏆 Achievements</div></div>
+                <div class="farm"><div class="fnode faction">📜 Certificates</div></div>
+                <div class="farm"><div class="fnode faction">💰 Payments</div></div>
+                <div class="farm"><div class="fnode faction">⭐ Reviews</div></div>
+                <div class="farm"><div class="fnode faction">↩️ Refunds</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fpanel" id="fp-admin">
+            <div class="fcanvas">
+              <div class="fnode fstart">🛡️ Admin Login</div><div class="farr">↓</div>
+              <div class="fnode faction">📊 Dashboard Overview</div><div class="farr">↓</div>
+              <div class="fbranch" style="flex-wrap:wrap">
+                <div class="farm"><div class="fnode faction">📝 Create / Edit Events</div></div>
+                <div class="farm"><div class="fnode fwarn">💰 Revenue & Refunds</div></div>
+                <div class="farm"><div class="fnode faction">📷 QR Entry Scanner</div></div>
+                <div class="farm"><div class="fnode" style="border-color:var(--blue);color:var(--blue)">📢 Announcements</div></div>
+                <div class="farm"><div class="fnode fsucc">📈 Analytics Reports</div></div>
+              </div><div class="farr">↓</div>
+              <div class="fnode fend">🔚 Logout → Session Cleared</div>
+            </div>
+          </div>
+
+          <div class="fpanel" id="fp-qr">
+            <div class="fcanvas">
+              <div class="fnode fstart">🔲 Student Shows QR</div><div class="farr">↓</div>
+              <div class="fnode faction">📷 Admin Scans QR</div><div class="farr">↓</div>
+              <div class="fnode fdecision">🔍 Ticket Valid?</div><div class="farr">↓</div>
+              <div class="fbranch">
+                <div class="farm"><div class="fnode fsucc">✅ Valid Ticket</div><div class="farr">↓</div><div class="fnode fend">✔️ Entry Granted</div></div>
+                <div class="farm"><div class="fnode" style="border-color:var(--accent);color:var(--accent)">❌ Invalid / Used</div><div class="farr">↓</div><div class="fnode fend">🚫 Deny Entry</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fpanel" id="fp-arch">
+            <div style="max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px">
+              <div class="arch-layer" style="border-color:rgba(232,76,61,.4)"><div style="font-size:1.5rem">🌐</div><div><div style="font-weight:700;color:var(--accent)">Frontend (HTML/CSS/JS)</div><div style="font-size:.74rem;color:var(--text2)">Syne + DM Sans · Dark/Light Mode · Mobile nav · Animations</div></div></div>
+              <div style="text-align:center;color:var(--text3);font-size:.8rem">↕ DOM rendering</div>
+              <div class="arch-layer" style="border-color:rgba(61,125,232,.4)"><div style="font-size:1.5rem">⚙️</div><div><div style="font-weight:700;color:var(--blue)">App Logic (JavaScript)</div><div style="font-size:.74rem;color:var(--text2)">Auth · Navigation · Booking · Admin · QR · Notifications</div></div></div>
+              <div style="text-align:center;color:var(--text3);font-size:.8rem">↕ Read/Write data</div>
+              <div class="arch-layer" style="border-color:rgba(0,201,177,.4)"><div style="font-size:1.5rem">🗄️</div><div><div style="font-weight:700;color:var(--teal)">Database (localStorage + Firebase)</div><div style="font-size:.74rem;color:var(--text2)">Events · Users · Tickets · Notifs · Feedback · Refunds</div></div></div>
+              <div style="text-align:center;color:var(--text3);font-size:.8rem">↕ Payment processing</div>
+              <div class="arch-layer" style="border-color:rgba(245,166,35,.4)"><div style="font-size:1.5rem">💳</div><div><div style="font-weight:700;color:var(--gold)">Payment Gateway (Simulated)</div><div style="font-size:.74rem;color:var(--text2)">UPI / Card / Wallet → triggers QR generation on success</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pc -->
+  <div id="bnav" style="position:fixed;bottom:0;left:0;right:0;z-index:400;height:58px;display:none;background:rgba(5,5,10,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.07)">
+    <div style="display:flex;height:100%">
+      <button onclick="page('home')" class="bni" id="bn-home"><i class="fa-solid fa-house"></i><span>Home</span></button>
+      <button onclick="page('events')" class="bni" id="bn-events"><i class="fa-solid fa-calendar-days"></i><span>Events</span></button>
+      <button onclick="page('tickets')" class="bni" id="bn-tickets"><i class="fa-solid fa-ticket"></i><span>Passes</span></button>
+      <button onclick="page('dashboard')" class="bni" id="bn-dashboard"><i class="fa-solid fa-gauge-high"></i><span>Me</span></button>
+      <button onclick="page('notifications')" class="bni" id="bn-notifications"><i class="fa-solid fa-bell"></i><span>Alerts</span></button>
+    </div>
+  </div>
+</div><!-- /s-main -->
+
+<!-- MODALS -->
+<div class="ov" id="ov-pay"><div class="modal"><button class="mx" onclick="closeOv('ov-pay')">✕</button><div id="pay-content"></div></div></div>
+<div class="ov" id="ov-nonstu"><div class="modal wide"><button class="mx" onclick="closeOv('ov-nonstu')">✕</button><div id="nonstu-content"></div></div></div>
+<div class="ov" id="ov-pass"><div class="modal"><button class="mx" onclick="closeOv('ov-pass')">✕</button><div id="pass-content"></div></div></div>
+<div class="ov" id="ov-cert"><div class="modal"><button class="mx" onclick="closeOv('ov-cert')">✕</button><div id="cert-content"></div></div></div>
+<div class="ov" id="ov-fb"><div class="modal"><button class="mx" onclick="closeOv('ov-fb')">✕</button><div id="fb-content"></div></div></div>
+<div class="ov" id="ov-email"><div class="modal wide"><button class="mx" onclick="closeOv('ov-email')">✕</button><div id="email-content"></div></div></div>
+<div class="ov" id="ov-ext-reg"><div class="modal wide"><button class="mx" onclick="closeOv('ov-ext-reg')">✕</button><div id="ext-reg-content"></div></div></div>
+<div class="ov" id="ov-email-send"><div class="modal"><button class="mx" onclick="closeOv('ov-email-send')">✕</button><div id="email-send-content"></div></div></div>
+<div class="ov" id="ov-ev"><div class="modal wide"><button class="mx" onclick="closeOv('ov-ev')">✕</button><div id="ev-form-content"></div></div></div>
+<div class="ov" id="ov-ann">
+  <div class="modal">
+    <button class="mx" onclick="closeOv('ov-ann')">✕</button>
+    <h3 style="font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:18px">📢 SEND ANNOUNCEMENT</h3>
+    <div class="fg"><label class="fl">Title</label><input class="fi" id="an-t" placeholder="Announcement title"></div>
+    <div class="fg"><label class="fl">Message</label><textarea class="fi" id="an-m" rows="4" placeholder="Write your message..."></textarea></div>
+    <div class="fg"><label class="fl">Type</label><select class="fi" id="an-tp"><option value="info">ℹ️ Info</option><option value="success">✅ Update</option><option value="warn">⚠️ Warning</option><option value="event">🎪 Event</option></select></div>
+    <button class="btn btn-red btn-full" onclick="sendAnn()">Send to All Students →</button>
+  </div>
+</div>
+
+<div class="ov" id="ov-xl-import">
+  <div class="modal wide">
+    <button class="mx" onclick="closeOv('ov-xl-import')">✕</button>
+    <div id="xl-import-content"></div>
+  </div>
+</div>
+
+
+<!-- NEXUS JavaScript -->
+<script src="app.js?v=2026010101"></script>
+</body>
+</html>
